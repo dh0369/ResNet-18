@@ -45,3 +45,63 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
 
+    start_time = time.time()
+    for epoch in range(epochs):
+        running_loss = 0.0
+        for inputs, labels in train_loader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+        running_loss = running_loss / len(train_loader)
+
+        model.eval()
+        with torch.no_grad():
+            print('Epoch: %03d/%03d | Train: %.2f%% | Loss: %.3f' % (
+                epoch + 1, epochs, compute_accuracy(model, train_loader), running_loss))
+            print('               | Test Accuracy: %.2f%%' % (
+                compute_accuracy(model, test_loader)))
+            
+    print('Total Training Time: %.2f min' % ((time.time() - start_time)/60))
+
+    sample_images, sample_labels = next(iter(test_loader))
+    sample_images = sample_images.to(device)
+    sample_labels = sample_labels.to(device)
+
+    sample_outputs = model(sample_images)
+    _, sample_predicted = torch.max(sample_outputs, 1)
+
+    num_samples = 5
+
+    fig, axes = plt.subplots(1, num_samples, figsize=(15, 3))
+    for i in range(num_samples):
+        sample_img = sample_images[i].cpu().numpy().transpose(1, 2, 0)
+        sample_img = 0.5 * sample_img + 0.5
+        axes[i].imshow(sample_img)
+        axes[i].set_title(f'Predicted: {classes[sample_predicted[i]]}\nActual: {classes[sample_labels[i]]}')
+
+    plt.show()
+
+def compute_accuracy(model, data_loader):
+    correct, total = 0, 0
+    for inputs, labels in data_loader:
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        outputs = model(inputs)
+        _, predicted_labels = torch.max(outputs, 1)
+
+        total += labels.size(0)
+        correct += (predicted_labels == labels).sum()
+
+    return correct.float()/total * 100
+    
+if __name__ == '__main__':
+    main()
