@@ -7,7 +7,6 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.stride = stride
 
         self.conv_block = nn.Sequential(
             nn.Conv2d(self.in_channels, self.out_channels, kernel_size=3, stride=stride, padding=1, bias=False),
@@ -17,19 +16,20 @@ class ResidualBlock(nn.Module):
             nn.BatchNorm2d(self.out_channels)
         )
 
-        self.shortcut = nn.Sequential()
+        self.downsample = None
 
-        if self.stride != 1 or self.in_channels != self.out_channels:
-            self.shortcut = nn.Sequential(
+        if self.in_channels != self.out_channels:
+            self.downsample = nn.Sequential(
                 nn.Conv2d(self.in_channels, self.out_channels, kernel_size=1, stride=stride, bias=False),
                 nn.BatchNorm2d(self.out_channels)
             )
     
     def forward(self, x):
+        identity = x
         out = self.conv_block(x)
-        # if self.stride != 1 or self.in_channels != self.out_channels:
-        #     out += self.shortcut(x)
-        out += self.shortcut(x)
+        if self.downsample is not None:
+            identity = self.downsample(x)
+        out += identity
         out = F.relu(out)
         return out
 
@@ -54,12 +54,12 @@ class ResNet(nn.Module):
         self.fc = nn.Linear(512, num_classes)
     
     def _make_layer(self, block, out_channels, num_blocks, stride):
-        strides = [stride] + [1] * (num_blocks - 1)
         layers = []
 
-        for stride in strides:
+        for _ in range(num_blocks):
             layers.append(block(self.in_channels, out_channels, stride))
             self.in_channels = out_channels
+
         return nn.Sequential(*layers)
     
     def forward(self, x):
