@@ -1,4 +1,5 @@
-from models import ResNet18
+from models import ResNet18, ResNet34
+from plain_models import Plain18, Plain34
 import time
 import numpy as np
 import torch
@@ -6,6 +7,7 @@ import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
+from torchsummary import summary
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -13,7 +15,12 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def dataset(batch_size):
     transform = transforms.Compose([transforms.ToTensor(), 
                                     transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
-                                                        std=[0.247, 0.243, 0.261])])
+                                                        std=[0.2470, 0.2435, 0.2616])])
+                                    # transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                    #                     std=[0.229, 0.224, 0.225])])
+                                    # transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                    #                     std=[0.5, 0.5, 0.5])])
+
 
     trainset = datasets.CIFAR10(root='./data', train=True,
                                 download=True, transform=transform)
@@ -39,6 +46,9 @@ def main():
     train_loader, test_loader, classes = dataset(batch_size)
 
     model = ResNet18()
+    # model = Plain18()
+    # model = ResNet34()
+    # model = Plain34()
 
     model = model.to(device)
 
