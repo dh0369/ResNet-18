@@ -58,6 +58,15 @@ class BottleNeck(nn.Module):
                 nn.BatchNorm2d(self.out_channels * 4)
             )
 
+    def forward(self, x):
+        identity = x
+        out = self.conv_block(x)
+        if self.downsample is not None:
+            identity = self.downsample(x)
+        out += identity
+        out = F.relu(out)
+        return out
+
 class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10):
         super(ResNet, self).__init__()
