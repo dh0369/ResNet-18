@@ -33,6 +33,31 @@ class ResidualBlock(nn.Module):
         out = F.relu(out)
         return out
 
+class BottleNeck(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1):
+        super(BottleNeck, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(self.in_channels, self.out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(self.out_channels),
+            nn.ReLU(),
+            nn.Conv2d(self.out_channels, self.out_channels, kernel_size=3, stride=stride, padding=1, bias=False),
+            nn.BatchNorm2d(self.out_channels),
+            nn.ReLU(),
+            nn.Conv2d(self.out_channels, self.out_channels * 4, kernel_size=1, bias=False),
+            nn.BatchNorm2d(self.out_channels * 4)
+        )
+
+        self.downsample = None
+
+        if self.in_channels != self.out_channels * 4:
+            self.downsample = nn.Sequential(
+                nn.Conv2d(self.in_channels, self.out_channels * 4, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(self.out_channels * 4)
+            )
+
 class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes=10):
         super(ResNet, self).__init__()
@@ -80,3 +105,6 @@ def ResNet18():
 
 def ResNet34():
     return ResNet(ResidualBlock, [3, 4, 6, 3])
+
+def ResNet50():
+    return ResNet(BottleNeck, [3, 4, 6, 3])
