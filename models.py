@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
+    def __init__(self, in_channels, out_channels, stride=1, downsample = None):
         super(ResidualBlock, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -16,25 +16,19 @@ class ResidualBlock(nn.Module):
             nn.BatchNorm2d(self.out_channels)
         )
 
-        self.downsample = None
-
-        if self.in_channels != self.out_channels:
-            self.downsample = nn.Sequential(
-                nn.Conv2d(self.in_channels, self.out_channels, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.out_channels)
-            )
+        self.downsample = downsample
     
     def forward(self, x):
         identity = x
         out = self.conv_block(x)
         if self.downsample is not None:
-            identity = self.downsample(x)
+            identity = self.downsample(identity)
         out += identity
         out = F.relu(out)
         return out
 
 class BottleNeck(nn.Module):
-    def __init__(self, in_channels, out_channels, stride=1):
+    def __init__(self, in_channels, out_channels, stride=1, downsample = None):
         super(BottleNeck, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -50,19 +44,13 @@ class BottleNeck(nn.Module):
             nn.BatchNorm2d(self.out_channels * 4)
         )
 
-        self.downsample = None
-
-        if self.in_channels != self.out_channels * 4:
-            self.downsample = nn.Sequential(
-                nn.Conv2d(self.in_channels, self.out_channels * 4, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.out_channels * 4)
-            )
+        self.downsample = downsample
 
     def forward(self, x):
         identity = x
         out = self.conv_block(x)
         if self.downsample is not None:
-            identity = self.downsample(x)
+            identity = self.downsample(identity)
         out += identity
         out = F.relu(out)
         return out
@@ -88,11 +76,20 @@ class ResNet(nn.Module):
         self.fc = nn.Linear(512, num_classes)
     
     def _make_layer(self, block, out_channels, num_blocks, stride):
+        downsample = None
         layers = []
 
-        for _ in range(num_blocks):
+        if self.in_channels != out_channels:
+            downsample = nn.Sequential(
+                nn.Conv2d(self.in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(out_channels)
+            )
+
+        layers.append(block(self.in_channels, out_channels, stride=stride, downsample=downsample))
+        self.in_channels = out_channels
+        
+        for _ in range(1, num_blocks):
             layers.append(block(self.in_channels, out_channels, stride))
-            self.in_channels = out_channels
 
         return nn.Sequential(*layers)
     
