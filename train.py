@@ -1,4 +1,4 @@
-from models import ResNet18, ResNet34
+from models import ResNet18, ResNet34, ResNet50
 from plain_models import Plain18, Plain34
 import time
 import numpy as np
@@ -45,10 +45,12 @@ def main():
     learning_rate = 1E-4
     train_loader, test_loader, classes = dataset(batch_size)
 
-    model = ResNet18()
+    # model = ResNet18()
     # model = Plain18()
     # model = ResNet34()
     # model = Plain34()
+    model = ResNet50()
+    print(model)
 
     model = model.to(device)
 
