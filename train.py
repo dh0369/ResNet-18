@@ -1,4 +1,4 @@
-from models import ResNet18, ResNet34, ResNet50
+from models import ResNet18, ResNet34, ResNet50, ResNet101, ResNet152
 from plain_models import Plain18, Plain34
 import time
 import numpy as np
@@ -41,18 +41,22 @@ def dataset(batch_size):
 def main():
 
     batch_size = 128
-    epochs = 30
+    epochs = 150
     learning_rate = 1E-4
     train_loader, test_loader, classes = dataset(batch_size)
 
-    # model = ResNet18()
     # model = Plain18()
-    # model = ResNet34()
     # model = Plain34()
-    model = ResNet50()
+    # model = ResNet18()
+    # model = ResNet34()
+    # model = ResNet50()
+    # model = ResNet101()
+    model = ResNet152()
     print(model)
 
     model = model.to(device)
+
+    summary(model, input_size=(3, 32, 32))
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
